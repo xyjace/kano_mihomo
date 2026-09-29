@@ -30,7 +30,7 @@
     // 在线下载源（GitHub Release 优先）+ sha256 校验（防截断/防篡改）
     // ⚠️ 常量顺序依赖：被引用的常量必须先声明（TDZ 会整段报错、插件不显示）
     const GITHUB_REPO = "xyjace/kano_mihomo"
-    const RELEASE_TAG = "v1.3.0"
+    const RELEASE_TAG = "v1.4.0"
     const RELEASE_BASE = `https://github.com/${GITHUB_REPO}/releases/download/${RELEASE_TAG}/`
     const RAW_BASE = `https://raw.githubusercontent.com/${GITHUB_REPO}/main/` // 兜底源
     // 站点镜像优先（国内直连快；隐藏文件夹未上榜），GitHub 作为备胎
