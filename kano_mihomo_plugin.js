@@ -1,11 +1,11 @@
 //<script>
 // ============================================================
-// mihomo 内核插件（强化版）v1.3.0  By_Jace 2026-09-29
+// mihomo 内核插件（强化版）v1.3.0  By_Jace
 // 基于 kanoqwq 猫猫Clash插件2.4（MIT）修改强化：TUN+FORWARD 架构沿用其已实机验证方案
-// 能力：官方内核在线安装(整包/迷你分体双路) / 订阅管理(双形态槽位)
-//       / 重置配置(站点拉最新) / 在线升级内核 / 全程sha256校验
-// 安全：强密钥 + CORS全关 + 权限收紧（猫猫包两处硬伤已修复）
-// 配置形态：精简版（单订阅槽+节点选择/自动选择+CN直连分流）
+// 能力：官方内核在线安装与升级（多镜像+sha256校验）/ 本地节点文件导入 / 订阅管理
+//       / 配置重置 / 开机自启 / ZashBoard 面板内嵌自动连接
+// 安全：管理密钥安装时随机生成 / CORS 全关 / 权限收紧 / 节点凭据不出设备
+// 配置形态：纯本地节点模式（节点选择/自动选择 + 国内直连分流）
 // ============================================================
 (() => {
     const PLUGIN_VER = "1.3.0"
@@ -20,10 +20,9 @@
     const CORE_URL_PATH = `https://github.com/MetaCubeX/mihomo/releases/download/${CORE_TAG}/mihomo-android-arm64-v8-${CORE_TAG}.gz`
     // 本地安装包查找顺序（远程安装可走下面的在线下载兜底）
     const ZIP_CANDIDATES = ["/sdcard/kano_mihomo.zip", "/sdcard/Download/kano_mihomo.zip", "/sdcard/下载/kano_mihomo.zip", "/data/data/com.minikano.f50_sms/files/uploads/kano_mihomo.zip"]
-    // 在线下载（云端下载站隐藏链）+ sha256 校验（防截断/防篡改）
-    // ⚠️ URL必须与云端实际建链一致（v1.0.2教训：占位URL忘替换导致设备拉404）
-    const RAW_BASE = `https://raw.githubusercontent.com/${GITHUB_REPO}/main/` // 公开兜底源（仓库内不挂私有站点链接）
-    const GITHUB_REPO = "xyjace/kano_mihomo" // 发布时替换为真实 owner/repo
+    // 在线下载源（GitHub Release 优先）+ sha256 校验（防截断/防篡改）
+    const RAW_BASE = `https://raw.githubusercontent.com/${GITHUB_REPO}/main/` // 兜底源
+    const GITHUB_REPO = "xyjace/kano_mihomo"
     const RELEASE_TAG = "v1.3.0"
     const RELEASE_BASE = `https://github.com/${GITHUB_REPO}/releases/download/${RELEASE_TAG}/`
     const ZIP_URLS = [RELEASE_BASE + "kano_mihomo.zip"]
@@ -358,7 +357,7 @@ H=$(sha256sum ${out} 2>/dev/null | awk '{print $1}')
         createToast("备份已导出", 'green')
     }
 
-    // ---------- 订阅管理（页面化增删订阅槽位，v1.0.4） ----------
+    // ---------- 订阅管理（页面化增删订阅） ----------
     let confirmDel2 = false
     const subBtn = document.createElement('button')
     subBtn.textContent = "订阅管理"
@@ -448,7 +447,7 @@ H=$(sha256sum ${out} 2>/dev/null | awk '{print $1}')
         }
     }
 
-    // ---------- 重置配置（拉取站点最新精简配置，保留订阅链接，v1.1.0） ----------
+    // ---------- 重置配置（拉取最新配置模板，保留密钥与节点） ----------
     let confirmReset = false
     const resetBtn = document.createElement('button')
     resetBtn.textContent = "重置配置"
@@ -502,7 +501,7 @@ grep -q "proxy-providers" /data/km_config.new.yaml && echo "CFG_OK" || echo "CFG
         restartBtn.click()
     }
 
-    // ---------- 导入节点文件（设备内部通道，节点凭据不经任何第三方，v1.2.0） ----------
+    // ---------- 导入节点文件（设备内部通道，节点凭据不经任何第三方） ----------
     const importInput = document.createElement('input')
     importInput.type = 'file'
     importInput.accept = '.yaml,.yml,.txt,.conf'
@@ -631,8 +630,7 @@ grep -q "proxy-providers" /data/km_config.new.yaml && echo "CFG_OK" || echo "CFG
         bootBtn.style.background = boot ? "var(--dark-btn-color-active)" : ""
         const running = await isRunning()
         updateStatusEl(running ? '● 运行中' : '○ 已停止', running)
-        // 注意：此处严禁调用 refreshFrameIfOpen()——本函数在3秒轮询里，
-        // 调它=iframe每3秒整页重载（v1.0.2"频繁在刷"根因）
+        // 注意：轮询回调内禁止调用 refreshFrameIfOpen()（iframe 整页重载会打断面板使用）
     }
 
     const updateStatusEl = (text, running) => {
