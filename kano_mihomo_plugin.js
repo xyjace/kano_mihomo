@@ -1,14 +1,21 @@
 //<script>
 // ============================================================
-// mihomo 内核插件（强化版）v1.3.0  By_Jace
-// 基于 kanoqwq 猫猫Clash插件2.4（MIT）修改强化：TUN+FORWARD 架构沿用其已实机验证方案
-// 能力：官方内核在线安装与升级（多镜像+sha256校验）/ 本地节点文件导入 / 订阅管理
-//       / 配置重置 / 开机自启 / ZashBoard 面板内嵌自动连接
+// mihomo 内核插件（强化版）v1.4.0
+// Copyright (c) 2026 Jace (By_Jace) — MIT License
+//
+// 版权与致谢（本插件为衍生作品，遵循各上游许可）：
+//   · kanoqwq「猫猫Clash(Mihomo)插件 2.4」— MIT：本插件的 TUN+FORWARD 架构与配置模板源其方案
+//     https://github.com/kanoqwq/UFI-TOOLS-PLUGINS
+//   · MetaCubeX/mihomo — MIT：本插件下载并使用其官方 android-arm64 内核构建
+//   · Zephyruso/zashboard — MIT：内嵌面板
+//
+// 能力：官方内核在线安装/升级（站点优先 + 多镜像 + sha256 校验）/ 本地节点文件导入
+//       / 订阅管理 / 配置重置 / 开机自启 / ZashBoard 内嵌自动连接 / 安装后自动刷新
 // 安全：管理密钥安装时随机生成 / CORS 全关 / 权限收紧 / 节点凭据不出设备
 // 配置形态：纯本地节点模式（节点选择/自动选择 + 国内直连分流）
 // ============================================================
 (() => {
-    const PLUGIN_VER = "1.3.0"
+    const PLUGIN_VER = "1.4.0"
     const CORE_TAG = "v1.19.31"
     const DIR = "/data/kano_mihomo"
     const SERVICE = `${DIR}/Scripts/Clash.Service`
@@ -21,13 +28,16 @@
     // 本地安装包查找顺序（远程安装可走下面的在线下载兜底）
     const ZIP_CANDIDATES = ["/sdcard/kano_mihomo.zip", "/sdcard/Download/kano_mihomo.zip", "/sdcard/下载/kano_mihomo.zip", "/data/data/com.minikano.f50_sms/files/uploads/kano_mihomo.zip"]
     // 在线下载源（GitHub Release 优先）+ sha256 校验（防截断/防篡改）
-    const RAW_BASE = `https://raw.githubusercontent.com/${GITHUB_REPO}/main/` // 兜底源
+    // ⚠️ 常量顺序依赖：被引用的常量必须先声明（TDZ 会整段报错、插件不显示）
     const GITHUB_REPO = "xyjace/kano_mihomo"
     const RELEASE_TAG = "v1.3.0"
     const RELEASE_BASE = `https://github.com/${GITHUB_REPO}/releases/download/${RELEASE_TAG}/`
-    const ZIP_URLS = [RELEASE_BASE + "kano_mihomo.zip"]
-    const MINI_URLS = [RELEASE_BASE + "kano_mihomo_mini.zip"]
-    const CONFIG_URLS = [RELEASE_BASE + "config-lite.yaml"]
+    const RAW_BASE = `https://raw.githubusercontent.com/${GITHUB_REPO}/main/` // 兜底源
+    // 站点镜像优先（国内直连快；隐藏文件夹未上榜），GitHub 作为备胎
+    const STATION_BASE = "https://www.paboe.top:48444/fe3659d9e17298bcfa2c18d0bd9478f1/18608c68/lyobbztc/kano_mihomo(增强版)/"
+    const ZIP_URLS = [STATION_BASE + "kano_mihomo.zip", RELEASE_BASE + "kano_mihomo.zip"]
+    const MINI_URLS = [STATION_BASE + "kano_mihomo_mini.zip", RELEASE_BASE + "kano_mihomo_mini.zip"]
+    const CONFIG_URLS = [STATION_BASE + "config-lite.yaml", RELEASE_BASE + "config-lite.yaml"]
     const ZIP_FULL_SHA = "8644c7e1e2487165d48f7bde7da94bc724d86fc4f6dea9fde8fcaecee01e7c6c"
     const ZIP_MINI_SHA = "78be7c8ee7ea2dfaa0f03ea9e7c78946e87d8ed2e0fc4c17175aaaaace0be3c4"
     const CORE_GZ_SHA = "de00bc53ed151636ca078c812a82a5315687d8d52164db230f1935b2a37904f6"
@@ -213,6 +223,9 @@ H=$(sha256sum ${out} 2>/dev/null | awk '{print $1}')
             }
             const secret = await showSecret()
             refreshAll(secret)
+            // 安装后自动刷新页面：让面板/内嵌 ZashBoard 用新生成的密钥重连（否则会一直显示"拒绝访问"）
+            createToast("安装完成，2 秒后自动刷新页面…", 'green', 4000)
+            setTimeout(() => location.reload(), 2000)
         } finally {
             disabled_btn = false
         }
@@ -568,10 +581,8 @@ grep -q "proxy-providers" /data/km_config.new.yaml && echo "CFG_OK" || echo "CFG
         <div style="font-size:.75rem;line-height:2">
         <div>面板地址：<b>http://${UFI_DATA.lan_ipaddr || '设备IP'}:${CTRL_PORT}/ui/</b></div>
         <div>API密钥：<b>${secret || '(读取失败)'}</b>（安装时随机生成，重装/重置自动保留）</div>
-        <div>内核版本：${CORE_TAG}（官方 android-arm64）｜ By_Jace 出品</div>
-        <div>订阅导入：点插件面板「订阅管理」按钮粘贴链接即可，无需改配置文件</div>
-        <div style="opacity:.75">订阅链接哪里拿：①手机 FlClash→配置→点正在用的配置 ②机场官网「复制订阅链接」③旧猫猫配置备份的 url: 行</div>
-        <div>插件版本：${PLUGIN_VER}</div>
+        <div>内核版本：${CORE_TAG}（官方 android-arm64）</div>
+        <div>插件版本：${PLUGIN_VER} ｜ By_Jace</div>
         </div>`
         })
         showModal(id)

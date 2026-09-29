@@ -1,4 +1,4 @@
-# 安装指引（v1.3.0）
+# 安装指引（v1.4.0）
 
 > 面向所有 UFI-TOOLS 用户。唯一发布源 = 本仓库 Release，无需任何第三方链接。
 
@@ -10,7 +10,7 @@
 
 ## 安装（4 步）
 
-1. **贴插件**：打开 [Release v1.3.0](https://github.com/xyjace/kano_mihomo/releases/tag/v1.3.0)，下载 `kano_mihomo_plugin.js` 用文本编辑器打开，全选复制 → UFI-TOOLS 后台 → 插件管理 → 添加插件 → 粘贴 → 保存
+1. **贴插件**：打开 [Release v1.4.0](https://github.com/xyjace/kano_mihomo/releases/tag/v1.4.0)，下载 `kano_mihomo_plugin.js` 用文本编辑器打开，全选复制 → UFI-TOOLS 后台 → 插件管理 → 添加插件 → 粘贴 → 保存
 2. **装内核**：展开「mihomo 内核(强化版)」面板 → 点「安装mihomo(v1.19.31)」→ 自动下载依赖包（GitHub 直连 / gh 镜像轮询，sha256 校验）并启动。管理密钥**安装时自动随机生成**，无需配置
 3. **导节点**（二选一）：
    - **本地节点文件**：点「导入节点」→ 选择你的节点文件（yaml 节点表 / `vless://` `ss://` 分享链接文本均可），设备内部通道，凭据不经过任何第三方
