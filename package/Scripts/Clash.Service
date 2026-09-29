@@ -1,5 +1,5 @@
 #!/system/bin/sh
-# mihomo 服务脚本（强化版·安南 2026-09-29）
+# mihomo 服务脚本（强化版· 2026-09-29）
 # 基于 kanoqwq 猫猫Clash插件2.4 的 Clash.Service 修订：
 #   1) 停止时等待进程真正退出，15s 不退则 kill -9 兜底
 #   2) iptables 规则带 dev 参数校验，TUN 设备名从配置动态读取
