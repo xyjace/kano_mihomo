@@ -22,17 +22,17 @@
     const ZIP_CANDIDATES = ["/sdcard/kano_mihomo.zip", "/sdcard/Download/kano_mihomo.zip", "/sdcard/下载/kano_mihomo.zip", "/data/data/com.minikano.f50_sms/files/uploads/kano_mihomo.zip"]
     // 在线下载（云端下载站隐藏链）+ sha256 校验（防截断/防篡改）
     // ⚠️ URL必须与云端实际建链一致（v1.0.2教训：占位URL忘替换导致设备拉404）
-    const STATION_BASE = "https://www.paboe.top:48444/9b2d15fcee24d87060991c1955170637/c1345f5a/iflklchd/download/"
-    const GITHUB_REPO = "OWNER_SLASH_REPO" // 发布时替换为真实 owner/repo
+    const RAW_BASE = `https://raw.githubusercontent.com/${GITHUB_REPO}/main/` // 公开兜底源（仓库内不挂私有站点链接）
+    const GITHUB_REPO = "xyjace/kano_mihomo" // 发布时替换为真实 owner/repo
     const RELEASE_TAG = "v1.3.0"
     const RELEASE_BASE = `https://github.com/${GITHUB_REPO}/releases/download/${RELEASE_TAG}/`
-    const ZIP_URLS = [RELEASE_BASE + "kano_mihomo.zip", STATION_BASE + "kano_mihomo.zip"]
-    const MINI_URLS = [RELEASE_BASE + "kano_mihomo_mini.zip", STATION_BASE + "kano_mihomo_mini.zip"]
-    const CONFIG_URLS = [RELEASE_BASE + "config-lite.yaml", STATION_BASE + "config-lite.yaml"]
+    const ZIP_URLS = [RELEASE_BASE + "kano_mihomo.zip"]
+    const MINI_URLS = [RELEASE_BASE + "kano_mihomo_mini.zip"]
+    const CONFIG_URLS = [RELEASE_BASE + "config-lite.yaml"]
     const ZIP_FULL_SHA = "8644c7e1e2487165d48f7bde7da94bc724d86fc4f6dea9fde8fcaecee01e7c6c"
     const ZIP_MINI_SHA = "78be7c8ee7ea2dfaa0f03ea9e7c78946e87d8ed2e0fc4c17175aaaaace0be3c4"
     const CORE_GZ_SHA = "de00bc53ed151636ca078c812a82a5315687d8d52164db230f1935b2a37904f6"
-    const CONFIG_URL = STATION_BASE + "config-lite.yaml"
+    const CONFIG_URL = RAW_BASE + "package/Proxy/config.template.yaml"
 
     // 下载+sha256校验（-k容忍老CA；失败回显curl退出码与文件大小便于诊断）
     const dlVerify = async (url, out, sha, timeoutMs) => {
