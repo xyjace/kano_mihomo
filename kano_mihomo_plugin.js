@@ -38,8 +38,8 @@
     const ZIP_URLS = [STATION_BASE + "kano_mihomo.zip", RELEASE_BASE + "kano_mihomo.zip"]
     const MINI_URLS = [STATION_BASE + "kano_mihomo_mini.zip", RELEASE_BASE + "kano_mihomo_mini.zip"]
     const CONFIG_URLS = [STATION_BASE + "config-lite.yaml", RELEASE_BASE + "config-lite.yaml"]
-    const ZIP_FULL_SHA = "8644c7e1e2487165d48f7bde7da94bc724d86fc4f6dea9fde8fcaecee01e7c6c"
-    const ZIP_MINI_SHA = "78be7c8ee7ea2dfaa0f03ea9e7c78946e87d8ed2e0fc4c17175aaaaace0be3c4"
+    const ZIP_FULL_SHA = "daf0cf6f9d5794edd63481a08f3268cd4d9ba39307702f7ed2631bc40a304376"
+    const ZIP_MINI_SHA = "61da2ea9ba64d0abe2a6a6649912d45fc2d1d6b22d5e0498900a1eb09e270960"
     const CORE_GZ_SHA = "de00bc53ed151636ca078c812a82a5315687d8d52164db230f1935b2a37904f6"
     const CONFIG_URL = RAW_BASE + "package/Proxy/config.template.yaml"
 
