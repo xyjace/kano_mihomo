@@ -1,0 +1,117 @@
+# ===== mihomo 精简版配置（安南 2026-09-29）=====
+# 纯本地节点模式（安奈定）：只有「我的节点」文件槽，无订阅
+# 插件「导入节点」按钮写入节点文件，两个分组（节点选择/自动选择）、国内直连分流
+# 加固项与完整版一致：强密钥 + CORS 全关
+
+mixed-port: 7890
+redir-port: 7891
+tproxy-port: 1536
+ipv6: true
+mode: Rule
+allow-lan: true
+disable-keep-alive: true
+unified-delay: true
+tcp-concurrent: true
+log-level: warning
+find-process-mode: off
+
+external-controller: 0.0.0.0:7788
+secret: "CHANGE_ME_AT_INSTALL"
+external-ui: WebUI/zashboard
+external-ui-url: "https://github.com/Zephyruso/zashboard/releases/latest/download/dist.zip"
+external-controller-cors:
+  allow-origins: []
+  allow-private-network: false
+
+profile:
+  store-selected: true
+
+proxy-providers:
+  # 本地节点文件：插件「导入节点」按钮写入，无需订阅链接
+  我的节点:
+    type: file
+    path: ./proxy_providers/我的节点.yaml
+    health-check:
+      enable: true
+      url: https://www.gstatic.com/generate_204
+      interval: 300
+
+# 网卡模块（与完整版相同，热点设备走代理的核心）
+tun:
+  enable: true
+  device: Meta
+  stack: mixed
+  dns-hijack:
+    - any:53
+    - tcp://any:53
+  udp-timeout: 300
+  auto-route: true
+  strict-route: true
+  auto-redirect: false
+  auto-detect-interface: true
+
+dns:
+  enable: true
+  ipv6: true
+  listen: 0.0.0.0:1053
+  enhanced-mode: redir-host
+  nameserver:
+    - https://doh.pub/dns-query
+    - https://dns.alidns.com/dns-query
+
+# 嗅探：TLS/HTTP 探明真实域名再分流（防 IP 直连流量绕过分流）
+sniffer:
+  enable: true
+  force-dns-mapping: true
+  parse-pure-ip: true
+  override-destination: true
+  sniff:
+    HTTP:
+      ports: [80, 8080-8880]
+    TLS:
+      ports: [443, 5228, 8443]
+    QUIC:
+      ports: [443, 8443]
+
+proxy-groups:
+  - name: 节点选择
+    type: select
+    proxies:
+      - 自动选择
+      - DIRECT
+    use:
+      - 我的节点
+
+  - name: 自动选择
+    type: url-test
+    url: https://www.gstatic.com/generate_204
+    interval: 300
+    tolerance: 50
+    use:
+      - 我的节点
+
+rule-anchor:
+  IPCIDR: &IPCIDR
+    {type: http, behavior: ipcidr, format: mrs, interval: 86400}
+  Domain: &Domain
+    {type: http, behavior: domain, format: mrs, interval: 86400}
+
+rule-providers:
+  CN_域:
+    <<: *Domain
+    path: ./rules/CN_域.mrs
+    url: "https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/cn.mrs"
+  CN_IP:
+    <<: *IPCIDR
+    path: ./rules/CN_IP.mrs
+    url: "https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/cn.mrs"
+  Private_域:
+    <<: *Domain
+    path: ./rules/LAN.mrs
+    url: "https://cdn.jsdelivr.net/gh/GitMetaio/rule@master/rule/Clash/Lan/Lan_OCD_Domain.mrs"
+
+rules:
+  - RULE-SET,Private_域,DIRECT
+  - RULE-SET,CN_域,DIRECT
+  - RULE-SET,CN_IP,DIRECT
+  - MATCH,节点选择

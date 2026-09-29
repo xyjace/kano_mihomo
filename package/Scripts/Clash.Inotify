@@ -1,0 +1,16 @@
+#!/system/bin/sh
+# mihomo 联动守卫（强化版·安南 2026-09-29）
+# 与猫猫插件同机制：inotifyd 监视 /data/kano_mihomo/Clash 目录，
+# 其他插件/脚本 touch disable 文件即停核，删除 disable 即复启（紧急开关）。
+script_path=/data/kano_mihomo/Scripts
+
+events=$1
+monitor_file=$3
+
+if [ "$monitor_file" = "disable" ]; then
+    if [ "$events" = "n" ]; then
+        $script_path/Clash.Service stop
+    elif [ "$events" = "d" ]; then
+        $script_path/Clash.Service start
+    fi
+fi

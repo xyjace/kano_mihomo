@@ -1,0 +1,95 @@
+#!/system/bin/sh
+# mihomo 服务脚本（强化版·安南 2026-09-29）
+# 基于 kanoqwq 猫猫Clash插件2.4 的 Clash.Service 修订：
+#   1) 停止时等待进程真正退出，15s 不退则 kill -9 兜底
+#   2) iptables 规则带 dev 参数校验，TUN 设备名从配置动态读取
+#   3) 启动前置检查（内核/配置存在性），避免半残安装
+Module_dir="/data/kano_mihomo"
+sdcard_dir="/sdcard"
+CORE="$Module_dir/Proxy/Clash.Core"
+CONF="$Module_dir/Proxy/config.yaml"
+LOG="$sdcard_dir/mihomo内核日志.txt"
+
+TUN_DEVICE=$(grep 'device:' "$CONF" 2>/dev/null | awk '{print $2}' | tr -d ' ')
+if [ -z "$TUN_DEVICE" ]; then
+    TUN_DEVICE="Meta"
+fi
+
+is_running() {
+    ps -ef | grep -- 'Clash.Core -d' | grep -vE 'inotifyd|grep' > /dev/null
+}
+
+start() {
+    if [ ! -x "$CORE" ]; then
+        echo "内核不存在或无执行权限: $CORE"
+        return 1
+    fi
+    if [ ! -f "$CONF" ]; then
+        echo "配置不存在: $CONF"
+        return 1
+    fi
+    if is_running; then
+        echo "mihomo内核正在运行中，不执行启动命令"
+        return 0
+    fi
+    nohup "$CORE" -d "$Module_dir/Proxy" > "$LOG" 2>&1 &
+    sleep 1
+    if is_running; then
+        iptables -C FORWARD -i "$TUN_DEVICE" -j ACCEPT 2>/dev/null || iptables -I FORWARD -i "$TUN_DEVICE" -j ACCEPT
+        iptables -C FORWARD -o "$TUN_DEVICE" -j ACCEPT 2>/dev/null || iptables -I FORWARD -o "$TUN_DEVICE" -j ACCEPT
+        iptables -C OUTPUT -o "$TUN_DEVICE" -j ACCEPT 2>/dev/null || iptables -A OUTPUT -o "$TUN_DEVICE" -j ACCEPT
+        echo "mihomo内核已启动,目标TUN设备:$TUN_DEVICE"
+    else
+        echo "mihomo内核启动失败,请查看日志:$LOG"
+        return 1
+    fi
+}
+
+stop() {
+    if is_running; then
+        pid=$(pgrep -f 'Clash.Core -d')
+        kill -15 $pid 2>/dev/null
+        i=0
+        while is_running && [ $i -lt 15 ]; do
+            sleep 1
+            i=$((i+1))
+        done
+        if is_running; then
+            kill -9 $pid 2>/dev/null
+            sleep 1
+        fi
+        iptables -D FORWARD -i "$TUN_DEVICE" -j ACCEPT 2>/dev/null
+        iptables -D FORWARD -o "$TUN_DEVICE" -j ACCEPT 2>/dev/null
+        iptables -D OUTPUT -o "$TUN_DEVICE" -j ACCEPT 2>/dev/null
+        if is_running; then
+            echo "mihomo内核停止失败,进程仍在运行"
+            return 1
+        fi
+        echo "mihomo内核已关闭并清除iptables规则"
+    else
+        iptables -D FORWARD -i "$TUN_DEVICE" -j ACCEPT 2>/dev/null
+        iptables -D FORWARD -o "$TUN_DEVICE" -j ACCEPT 2>/dev/null
+        iptables -D OUTPUT -o "$TUN_DEVICE" -j ACCEPT 2>/dev/null
+        echo "mihomo内核未在运行(残留iptables规则已清理)"
+    fi
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    status)
+        if is_running; then
+            echo "running"
+        else
+            echo "stopped"
+        fi
+        ;;
+    *)
+        echo "只能使用start|stop|status三个参数控制内核"
+        exit 1
+        ;;
+esac
