@@ -1,4 +1,4 @@
-# ===== mihomo 精简版配置=====
+# ===== mihomo lite configuration =====
 
 mixed-port: 7890
 redir-port: 7891
@@ -20,11 +20,17 @@ external-controller-cors:
   allow-origins: []
   allow-private-network: false
 
+# Geo database source = plugin station (first copy bundled in the install package; refresh via plugin Reset)
+geox-url:
+  geoip: "https://www.paboe.top:48444/fe3659d9e17298bcfa2c18d0bd9478f1/18608c68/lyobbztc/kano_mihomo(增强版)/geoip.metadb"
+  geosite: "https://www.paboe.top:48444/fe3659d9e17298bcfa2c18d0bd9478f1/18608c68/lyobbztc/kano_mihomo(增强版)/geosite.dat"
+  mmdb: "https://www.paboe.top:48444/fe3659d9e17298bcfa2c18d0bd9478f1/18608c68/lyobbztc/kano_mihomo(增强版)/geoip.metadb"
+
 profile:
   store-selected: true
 
 proxy-providers:
-  # 本地节点文件：插件「导入节点」按钮写入，无需订阅链接
+  # Local node file: written by the plugin Import-Nodes button; no subscription needed
   我的节点:
     type: file
     path: ./proxy_providers/我的节点.yaml
@@ -33,7 +39,7 @@ proxy-providers:
       url: https://www.gstatic.com/generate_204
       interval: 300
 
-# 网卡模块（与完整版相同，热点设备走代理的核心）
+# Interface module (same as full template; core of hotspot-device proxying)
 tun:
   enable: true
   device: Meta
@@ -56,7 +62,7 @@ dns:
     - https://doh.pub/dns-query
     - https://dns.alidns.com/dns-query
 
-# 嗅探：TLS/HTTP 探明真实域名再分流（防 IP 直连流量绕过分流）
+# Sniffer: probe real domain from TLS/HTTP before routing (prevents IP-traffic bypass)
 sniffer:
   enable: true
   force-dns-mapping: true

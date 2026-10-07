@@ -1,7 +1,7 @@
 #!/system/bin/sh
-# mihomo 联动守卫（强化版 · 2026-09-29）
-# 与猫猫插件同机制：inotifyd 监视 /data/kano_mihomo/Clash 目录，
-# 其他插件/脚本 touch disable 文件即停核，删除 disable 即复启（紧急开关）。
+# mihomo watchdog (enhanced, 2026-09-29)
+# Same mechanism as the Cat plugin: inotifyd watches /data/kano_mihomo/Clash;
+# touching the disable file stops the core, deleting it resumes (emergency switch).
 script_path=/data/kano_mihomo/Scripts
 
 events=$1

@@ -1,0 +1,22 @@
+{
+  "plugin": {
+    "version": "1.5.0",
+    "note": "更新检测上线；geo 库内置；导入配置自动补控制面",
+    "js_sha256": "ed0454d6eb7499fca1188aab0384e47ebdc158e4b86a2893bcc844f28bc73a27"
+  },
+  "core": {
+    "version": "v1.19.31"
+  },
+  "geoip": {
+    "version": "2026-10-07",
+    "sha256": "0a0af840d4b77225cd53abf63d68c71946127bef426fdf5d92ad64b741f8f1ce"
+  },
+  "geosite": {
+    "version": "2026-10-07",
+    "sha256": "12dfa24f466986cfe1ead0c67e554e5c67642bb6b204ea64172178d25825f216"
+  },
+  "config": {
+    "version": "1.5.0",
+    "sha256": "37a82386e570f81fe274b277a41aeb64605baf3831eec24b59b7a54bc770a3b0"
+  }
+}
