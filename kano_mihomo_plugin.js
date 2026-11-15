@@ -1,6 +1,6 @@
 //<script>
 // ============================================================
-// mihomo Core Plugin (Enhanced) v1.5.0
+// mihomo Core Plugin (Enhanced) v1.5.1
 // Copyright (c) 2026 Jace (By_Jace) — MIT License
 //
 // Copyright & acknowledgments (derivative work, respecting upstream licenses):
@@ -16,7 +16,7 @@
 // Config shape: local-nodes-only mode (select/urltest groups + CN direct split routing)
 // ============================================================
 (() => {
-    const PLUGIN_VER = "1.5.0"
+    const PLUGIN_VER = "1.5.1"
     const CORE_TAG = "v1.19.31"
     const DIR = "/data/kano_mihomo"
     const SERVICE = `${DIR}/Scripts/Clash.Service`
@@ -31,7 +31,7 @@
     // Online sources + sha256 verification (anti-truncation / anti-tamper)
     // ⚠️ Order matters: constants must be declared before use (TDZ breaks the whole plugin)
     const GITHUB_REPO = "xyjace/kano_mihomo"
-    const RELEASE_TAG = "v1.5.0"
+    const RELEASE_TAG = "v1.5.1"
     const RELEASE_BASE = `https://github.com/${GITHUB_REPO}/releases/download/${RELEASE_TAG}/`
     const RAW_BASE = `https://raw.githubusercontent.com/${GITHUB_REPO}/main/` // fallback source
     // Station mirror first (fast CN direct; GitHub as backup)
@@ -41,8 +41,8 @@
     const CONFIG_URLS = [STATION_BASE + "config-lite.yaml", RELEASE_BASE + "config-lite.yaml"]
     // Update manifest: all updatable resource versions live in station version.json (fetched on load)
     const VERSION_URLS = [STATION_BASE + "version.json", RAW_BASE + "package/version.json"]
-    const ZIP_FULL_SHA = "ec2d635bda0cbc56d749e227c31e20f9c76fce77c241bb6491946753a20e10b8"
-    const ZIP_MINI_SHA = "9cee1d71b394228948ae53a2ae2f69bc6e6b26e2187c424fcaad9c3c6abbaa4e"
+    const ZIP_FULL_SHA = "c3e80a7cc2a3fa7d48d51823e8c5f466c692a09cfb0330d7628d6e56a85ca62f"
+    const ZIP_MINI_SHA = "5f500c11d557b1dfb616834f9b82195bb27475941b3d28f3ba9f719a78c4b1aa"
     const CORE_GZ_SHA = "de00bc53ed151636ca078c812a82a5315687d8d52164db230f1935b2a37904f6"
     const CONFIG_URL = RAW_BASE + "package/Proxy/config.template.yaml"
     // Geo databases: station direct links (same source as config geox-url); GitHub removed from the path
@@ -547,6 +547,9 @@ KMEOF
         if (!mv.success) return createToast("配置落位失败！", 'red')
         // v1.5.0: normalize (auto-fill control-plane/geo source; user configs work out of the box)
         if (!(await normalizeConfig())) createToast("归一化补齐未完全成功（面板可能需手动核 secret）", 'pink', 8000)
+        // v1.5.1: warn when the uploaded config has no TUN enabled (hotspot clients bypass the core entirely)
+        const tunRes = await runShellWithRoot(`sed -n '/^tun:/,/^[a-zA-Z]/p' ${CONF} | grep -q 'enable: *true'`)
+        if (!tunRes.success) createToast("配置未启用TUN(tun.enable),热点客户端流量将不经代理", 'pink', 10000)
         createToast("配置已更新，重启内核生效...", 'green')
         restartBtn.click()
     }

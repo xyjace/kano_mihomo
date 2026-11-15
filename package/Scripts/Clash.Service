@@ -35,10 +35,28 @@ start() {
     nohup "$CORE" -d "$Module_dir/Proxy" > "$LOG" 2>&1 &
     sleep 1
     if is_running; then
-        iptables -C FORWARD -i "$TUN_DEVICE" -j ACCEPT 2>/dev/null || iptables -I FORWARD -i "$TUN_DEVICE" -j ACCEPT
-        iptables -C FORWARD -o "$TUN_DEVICE" -j ACCEPT 2>/dev/null || iptables -I FORWARD -o "$TUN_DEVICE" -j ACCEPT
-        iptables -C OUTPUT -o "$TUN_DEVICE" -j ACCEPT 2>/dev/null || iptables -A OUTPUT -o "$TUN_DEVICE" -j ACCEPT
-        echo "mihomo内核已启动,目标TUN设备:$TUN_DEVICE"
+        # Wait briefly for the TUN device, then only insert forwarding rules when it
+        # really exists (iptables accepts rules for missing interfaces silently,
+        # which used to hide configs with tun disabled behind a zero-warning start)
+        tun_ok=0
+        i=0
+        while [ $i -lt 3 ]; do
+            if ip link show "$TUN_DEVICE" >/dev/null 2>&1; then
+                tun_ok=1
+                break
+            fi
+            sleep 1
+            i=$((i+1))
+        done
+        if [ "$tun_ok" = "1" ]; then
+            iptables -C FORWARD -i "$TUN_DEVICE" -j ACCEPT 2>/dev/null || iptables -I FORWARD -i "$TUN_DEVICE" -j ACCEPT
+            iptables -C FORWARD -o "$TUN_DEVICE" -j ACCEPT 2>/dev/null || iptables -I FORWARD -o "$TUN_DEVICE" -j ACCEPT
+            iptables -C OUTPUT -o "$TUN_DEVICE" -j ACCEPT 2>/dev/null || iptables -A OUTPUT -o "$TUN_DEVICE" -j ACCEPT
+            echo "mihomo内核已启动,目标TUN设备:$TUN_DEVICE"
+        else
+            echo "mihomo内核已启动,但未检测到TUN网卡:$TUN_DEVICE(配置未启用tun.enable)"
+            echo "热点客户端流量将不经代理;如需代理热点请上传含 tun.enable:true 的配置"
+        fi
     else
         echo "mihomo内核启动失败,请查看日志:$LOG"
         return 1
