@@ -35,6 +35,10 @@
 
 本项目的服务脚本与配置模板基于 kanoqwq 的 [猫猫Clash(Mihomo)插件 2.4](https://github.com/kanoqwq/UFI-TOOLS-PLUGINS) 修改强化，TUN+FORWARD 透明代理架构沿用其经实机验证的方案——感谢 MiniKano 的开源工作。差异集中在：官方内核直连升级、安全加固、节点文件导入、页面化订阅管理。
 
+## 已知限制
+
+- `tun.route-exclude-address`：在部分 Android 内核（如实测的中兴 F50，kernel 5.4.254）会把排除网段的流量黑洞（IPv4/IPv6 均超时、无回退），请勿在该类设备上使用此字段
+
 ## 安全建议（所有 UFI 用户）
 
 无论用哪个代理插件，建议检查两点：控制面密钥是否为默认值、`/data` 下插件目录权限是否 777。这两点在热点可达范围内都是真实攻击面。
