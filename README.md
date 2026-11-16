@@ -44,7 +44,7 @@ https://raw.githubusercontent.com/xyjace/kano_mihomo/main/kano_mihomo_plugin.js
 
 ## 安装
 
-仓库地址：**https://github.com/xyjace/kano_mihomo**（Release 附件与本页同步发布）
+仓库地址：[github.com/xyjace/kano_mihomo](https://github.com/xyjace/kano_mihomo)（Release 附件与本页同步发布）
 
 1. 依赖：UFI-TOOLS ≥ 3.9.0，开启「高级功能」
 2. 把 Release 里的插件 JS 全文粘贴进 UFI-TOOLS「插件管理」→ 添加插件
