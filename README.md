@@ -19,9 +19,32 @@
 - **geo 库内置（v1.5.0）**：安装包自带 geoip/geosite（并内置站点 geox-url 源），配置含 GEOIP/GEOSITE 规则也**不再依赖 GitHub 实时下载**，弱网/墙内设备开箱即用
 - **配置归一化（v1.5.0）**：上传/重置任何来源的配置，自动补齐控制面字段（external-controller/secret/external-ui），自备配置不再出现后台"拒绝访问"
 - **TUN 缺失提示（v1.5.1）**：上传未启用 TUN 的配置时面板明确提示"热点流量将不经代理"；服务脚本启动时校验 TUN 网卡真实存在，不再静默失效
+- **重装保留密钥（v1.5.1）**：重装/卸载重装不再更换管理密钥（配置+影子副本双保留），内嵌面板连接不再失效；更新检测改为免预检直取；修复一键升级内容校验误判
 - **ZashBoard 面板内嵌**：展开即自动连接（URL 带密钥免输）
 
+## 升级（v1.5.0 → v1.5.1）
+
+> 🔴 **本次更新需重新安装插件**：v1.5.0 的自动升级通道存在缺陷，v1.5.0 老用户请用下面任一方式手动重装**一次**即可；v1.5.1 起，后续更新恢复面板内一键升级。重装不会丢失管理密钥与已配置节点。
+
+**方式一 · 插件商店源（推荐）**：UFI-TOOLS「插件商店」→ 自定义源框填入：
+
+```
+https://raw.githubusercontent.com/xyjace/kano_mihomo/main/store.json
+```
+
+→ 点「加载」→ 一键安装 → 按提示「保存」。境内加速备选源：`https://cdn.jsdelivr.net/gh/xyjace/kano_mihomo@main/store.json`
+
+**方式二 · 手动粘贴**：浏览器打开（复制全文）：
+
+```
+https://raw.githubusercontent.com/xyjace/kano_mihomo/main/kano_mihomo_plugin.js
+```
+
+→ UFI-TOOLS「插件管理」→ mihomo 插件内容整体替换 → 保存（境内加速备选：`https://cdn.jsdelivr.net/gh/xyjace/kano_mihomo@main/kano_mihomo_plugin.js`）
+
 ## 安装
+
+仓库地址：**https://github.com/xyjace/kano_mihomo**（Release 附件与本页同步发布）
 
 1. 依赖：UFI-TOOLS ≥ 3.9.0，开启「高级功能」
 2. 把 Release 里的插件 JS 全文粘贴进 UFI-TOOLS「插件管理」→ 添加插件

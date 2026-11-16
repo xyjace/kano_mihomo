@@ -1,0 +1,19 @@
+{
+ "download_url": "https://raw.githubusercontent.com/xyjace/kano_mihomo/main/store",
+ "res": {
+  "code": 200,
+  "message": "success",
+  "data": {
+   "content": [
+    {
+     "name": "kano_mihomo(增强版).js",
+     "modified": "2026-11-16T10:25:00",
+     "hash_info": {
+      "md5": "d0e1c3ae3ade2f55f6dbbc2012fd791c"
+     },
+     "size": 54555
+    }
+   ]
+  }
+ }
+}

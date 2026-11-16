@@ -1,8 +1,8 @@
 {
   "plugin": {
-    "version": "1.5.0",
-    "note": "更新检测上线；geo 库内置；导入配置自动补控制面",
-    "js_sha256": "ed0454d6eb7499fca1188aab0384e47ebdc158e4b86a2893bcc844f28bc73a27"
+    "version": "1.5.1",
+    "note": "TUN缺失提示；重装保留管理密钥；一键升级改走app正规插件库接口",
+    "js_sha256": "359ee79d91fbf9338a5ac31e152bb6796625a4a3ba96197c4c60221d468fbd85"
   },
   "core": {
     "version": "v1.19.31"

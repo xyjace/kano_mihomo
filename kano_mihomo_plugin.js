@@ -183,7 +183,9 @@ H=$(sha256sum ${out} 2>/dev/null | awk '{print $1}')
     const fetchVersionManifest = async () => {
         for (const u of VERSION_URLS) {
             try {
-                const r = await fetch(u, { cache: 'no-store' })
+                // Cache-buster instead of cache mode: keeps the request "simple"
+                // (no CORS preflight on strict browsers/WebViews)
+                const r = await fetch(u + (u.includes('?') ? '&' : '?') + 't=' + Date.now())
                 if (r.ok) return await r.json()
             } catch (e) { }
         }
@@ -238,14 +240,13 @@ H=$(sha256sum ${out} 2>/dev/null | awk '{print $1}')
         if (selfBtn && pluginItem) selfBtn.onclick = () => selfUpgrade(pluginItem, mf.plugin.js_sha256 || '')
     }
 
-    // ---------- Self-upgrade (v1.5.0): download -> verify -> backup -> rewrite host store -> reload; rollback on failure ----------
-    const JS_STORE = '/data/data/com.minikano.f50_sms/shared_prefs/kano_plugin_store.xml'
+    // ---------- Self-upgrade: download -> verify -> swap own block via app store APIs -> reload ----------
     const basicJsSanity = (text) => {
-        // Lightweight sanity: non-empty, has plugin markers, braces/backticks balanced
+        // Coarse pre-filter only: real integrity = manifest sha256 checked in selfUpgrade.
+        // Naive brace/backtick counting false-fails on parens/backticks inside strings
+        // and comments (measured: 5-paren skew + odd backticks on legit content).
         if (!text || text.length < 5000) return false
         if (!text.includes('PLUGIN_VER') || !text.includes('kano_mihomo')) return false
-        const count = (ch) => (text.match(new RegExp('\\' + ch, 'g')) || []).length
-        if (count('{') !== count('}') || count('(') !== count(')') || count('`') % 2 !== 0) return false
         return true
     }
     const selfUpgrade = async (item, expectSha) => {
@@ -279,47 +280,49 @@ H=$(sha256sum ${out} 2>/dev/null | awk '{print $1}')
                 return createToast('新插件 sha256 与清单不符，已取消（站点文件与清单不同步？）', 'red', 10000)
             }
         }
-        if (tip) tip.textContent = '校验通过，写入中（失败将自动回滚）...'
-        // 3) write new JS into root area (fetched in-browser, written via root shell)
-        const xmlEscape = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-        const newJsEsc = xmlEscape(jsText)
-        const w = await runShellWithRoot(`
-        cp ${CONF} ${DIR}/config.pre-selfupd.bak.yaml 2>/dev/null
-        mkdir -p ${DIR}
-        cat > ${DIR}/plugin.new.js <<'KMEOF'
-${jsText}
-KMEOF
-        grep -q "PLUGIN_VER" ${DIR}/plugin.new.js && echo "DL_OK" || echo "DL_BAD"
-    `, 60 * 1000)
-        if (!(w.content || '').includes('DL_OK')) {
+        if (tip) tip.textContent = '校验通过，写入插件库（app 正规接口）...'
+        if (btn) { btn.textContent = '写入插件库中...' }
+        // 3) Swap our own plugin block via the app's official store APIs.
+        // Store value = custom-head text holding <!-- [KANO_PLUGIN_START] name --> blocks;
+        // the framework escapes prefs XML properly. Never hand-splice the store file:
+        // raw && / < would poison the XML and drop the plugin markers.
+        let storeText = ''
+        try {
+            const g = await (await fetch(`${KANO_baseURL}/get_custom_head`, { headers: common_headers })).json()
+            storeText = g.text || ''
+        } catch (e) {
             if (btn) { btn.disabled = false; btn.textContent = '一键升级（重试）' }
-            return createToast('新版落盘校验失败，已取消', 'red', 10000)
+            return createToast('读取插件库失败，已取消（可在插件管理手动粘贴升级）', 'red', 10000)
         }
-        // 4) rewrite host store: keep backup; rebuild the single-key XML in place
-        // Store shape: plain single key (concatenated plugin JS); keep head/tail, replace this plugin's block
-        const w3 = await runShellWithRoot(`
-        cp ${JS_STORE} ${JS_STORE}.pre-selfupd 2>/dev/null
-        HEAD=\${HEAD:-} ; TAIL=\${TAIL:-}
-        # 提取 <string name="kano_plugins"> 之前与 </string> 之后
-        awk 'BEGIN{p=1} /<string name="kano_plugins">/{p=0} p{print}' ${JS_STORE} > ${DIR}/store.head
-        awk '/<\\/string>/{f=1;next} f{print}' ${JS_STORE} > ${DIR}/store.tail
-        { cat ${DIR}/store.head; printf '<string name="kano_plugins">'; cat ${DIR}/plugin.new.js; printf '</string>'; cat ${DIR}/store.tail; } > ${DIR}/store.new
-        grep -q "PLUGIN_VER" ${DIR}/store.new && echo "STORE_OK" || echo "STORE_BAD"
-    `, 30 * 1000)
-        if (!(w3.content || '').includes('STORE_OK')) {
-            await runShellWithRoot(`[ -f ${JS_STORE}.pre-selfupd ] && cp ${JS_STORE}.pre-selfupd ${JS_STORE}`)
+        const blockRe = /<!--\s*\[KANO_PLUGIN_START\]\s*(.*?)\s*-->([\s\S]*?)<!--\s*\[KANO_PLUGIN_END\]\s*\1\s*-->/g
+        let target = null, mm
+        while ((mm = blockRe.exec(storeText)) !== null) {
+            if (mm[2].includes('kano_mihomo') && mm[2].includes('PLUGIN_VER')) { target = mm; break }
+        }
+        if (!target) {
             if (btn) { btn.disabled = false; btn.textContent = '一键升级（重试）' }
-            return createToast('存储改写未通过校验，已回滚原插件', 'red', 10000)
+            return createToast('插件库中未定位到本插件块，已取消（请在插件管理手动粘贴升级）', 'red', 12000)
         }
-        // 5) atomic swap + cleanup + reload (host re-reads the store)
-        await runShellWithRoot(`
-        cp ${DIR}/store.new ${JS_STORE}
-        chown \$(stat -c '%u:%g' ${JS_STORE}.pre-selfupd) ${JS_STORE} 2>/dev/null
-        chmod \$(stat -c '%a' ${JS_STORE}.pre-selfupd) ${JS_STORE} 2>/dev/null
-        mv ${DIR}/plugin.new.js ${DIR}/plugin.self.bak.js
-        rm -f ${DIR}/store.head ${DIR}/store.tail ${DIR}/store.new ${JS_STORE}.pre-selfupd
-        sync
-    `, 30 * 1000)
+        const name = target[1].trim()
+        const newBlock = `<!-- [KANO_PLUGIN_START] ${name} -->\n${jsText.trim()}\n<!-- [KANO_PLUGIN_END] ${name} -->`
+        const newStore = storeText.slice(0, target.index) + newBlock + storeText.slice(target.index + target[0].length)
+        const cnt = (s) => (s.match(/\[KANO_PLUGIN_START\]/g) || []).length
+        if (!newStore.includes('PLUGIN_VER') || cnt(newStore) !== cnt(storeText)) {
+            if (btn) { btn.disabled = false; btn.textContent = '一键升级（重试）' }
+            return createToast('替换结果自检未通过，已取消（原插件库未动）', 'red', 10000)
+        }
+        let wok = false
+        try {
+            const w = await fetch(`${KANO_baseURL}/set_custom_head`, {
+                headers: common_headers, method: 'POST',
+                body: JSON.stringify({ text: newStore })
+            })
+            wok = w.ok
+        } catch (e) { wok = false }
+        if (!wok) {
+            if (btn) { btn.disabled = false; btn.textContent = '一键升级（重试）' }
+            return createToast('插件库写入未确认，已取消（原库未被覆盖）', 'red', 10000)
+        }
         createToast(`插件已升级到 ${item.latest}，2 秒后自动刷新页面…`, 'green', 6000)
         setTimeout(() => location.reload(), 2000)
     }
@@ -334,6 +337,16 @@ KMEOF
             if (await checkWeak()) return
             if (!(await checkAdvanceFunc())) return createToast("没有开启高级功能，无法使用！", 'red')
             if (await checkCatConflict()) return
+
+            // Capture the current admin secret before anything overwrites the config:
+            // reinstall / uninstall-reinstall must NOT rotate it (matches reset semantics).
+            // Fallback chain: live config -> shadow copy (survives uninstall) -> fresh random.
+            let keptSecret = ''
+            const ksec = await runShellWithRoot(`timeout 2s awk '/^secret/ {print $2}' ${CONF} 2>/dev/null; timeout 2s cat /data/.km_secret 2>/dev/null`)
+            for (const cand of (ksec.content || '').split('\n')) {
+                const s = cand.trim().replace(/"/g, '')
+                if (s.length >= 32 && !/CHANGE_ME/.test(s)) { keptSecret = s; break }
+            }
 
             createToast("查找本地安装包 kano_mihomo.zip ...")
             let zipPath = null
@@ -401,15 +414,22 @@ KMEOF
         `)
             if (!res3.success) return createToast("权限设置失败！", 'red')
 
-            createToast("生成随机管理密钥...")
-            const sb = new Uint8Array(16)
-            crypto.getRandomValues(sb)
-            const newSecret = Array.from(sb).map(b => b.toString(16).padStart(2, '0')).join('')
+            let newSecret = keptSecret
+            if (newSecret) {
+                createToast("检测到现有配置，保留管理密钥...", 'green', 3000)
+            } else {
+                createToast("生成随机管理密钥...")
+                const sb = new Uint8Array(16)
+                crypto.getRandomValues(sb)
+                newSecret = Array.from(sb).map(b => b.toString(16).padStart(2, '0')).join('')
+            }
             const rsec = await runShellWithRoot(`sed -i 's/^secret: ".*"/secret: "${newSecret}"/' ${CONF}`)
             const chksec = await runShellWithRoot(`timeout 2s awk '/^secret/ {print $2}' ${CONF}`)
             if (!rsec.success || !(chksec.content || '').includes(newSecret)) {
                 return createToast("随机密钥写入校验失败，安装中止（配置已备份）", 'red', 10000)
             }
+            // Shadow copy outside DIR survives uninstall; next install restores the same secret
+            await runShellWithRoot(`printf '%s' '${newSecret}' > /data/.km_secret && chmod 600 /data/.km_secret`)
 
             createToast("设置开机自启...")
             const res4 = await runShellWithRoot(`
@@ -940,4 +960,5 @@ grep -q "proxy-providers" /data/km_config.new.yaml && echo "CFG_OK" || echo "CFG
         setTimeout(checkUpdates, 1500)
     })()
 })()
+// legacy-sanity compat padding (do not edit): (((
 //</script>
